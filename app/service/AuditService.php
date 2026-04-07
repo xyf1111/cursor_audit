@@ -6,9 +6,6 @@ use AiAuditLog;
 use AiUserDailyStat;
 use Lib\Vendor\DingtalkNotice;
 use Phalcon\Di;
-use Phalcon\Di;
-use Phalcon\Di;
-use Phalcon\Di;
 
 /**
  * 审计业务服务
@@ -40,6 +37,8 @@ class AuditService
             'model_name' => $this->sanitizeStr($params['modelName'] ?? '', 200),
             'input_tokens' => (int) ($params['inputTokens'] ?? 0),
             'output_tokens' => (int) ($params['outputTokens'] ?? 0),
+            'session_id' => ($params['sessionId'] ?? ''),
+            'cursor_trace_id' => ($params['cursorTraceId'] ?? ''),
         ];
 
         $log = AiAuditLog::createPrompt($data);
