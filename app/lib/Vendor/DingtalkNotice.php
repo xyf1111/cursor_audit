@@ -10,7 +10,7 @@ class DingtalkNotice
     const ROBOT_WEBHOOK = 'https://oapi.dingtalk.com/robot/send';
     // 测试 9895044bdbdc5f3e16e481321e484aad36daa028671385f4f5a295d8f98a102d
     // 正式 203ed6ebb91875c8a9e49d57b9140df768e31e47e6613ad734dd9b54e8beddbb
-    const AI_STAT_TOKEN = '9895044bdbdc5f3e16e481321e484aad36daa028671385f4f5a295d8f98a102d';
+    const AI_STAT_TOKEN = '203ed6ebb91875c8a9e49d57b9140df768e31e47e6613ad734dd9b54e8beddbb';
     const AI_STAT_KEYWORD = 'AI统计';
 
     /**

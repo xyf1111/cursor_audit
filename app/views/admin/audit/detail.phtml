@@ -28,6 +28,7 @@ $h = static function ($value): string {
         <div class="card">
             <div class="row"><span class="label">ID</span><?= $h($detail->id) ?></div>
             <div class="row"><span class="label">Trace ID</span><?= $h($detail->trace_id) ?></div>
+            <div class="row"><span class="label">Session ID</span><?= $h($detail->session_id) ?></div>
             <div class="row"><span class="label">机器 ID</span><?= $h($detail->machine_id) ?></div>
             <div class="row"><span class="label">用户名</span><?= $h($detail->user_name ?: 'unknown') ?></div>
             <div class="row"><span class="label">事件时间</span><?= $h($detail->timestamp) ?></div>

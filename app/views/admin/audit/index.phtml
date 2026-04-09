@@ -90,6 +90,7 @@ $buildQuery = static function (array $params) use ($filters, $pageSize): string 
                 <th>事件类型</th>
                 <th>项目名</th>
                 <th>模型</th>
+                <th>会话ID</th>
                 <th>输入 Token</th>
                 <th>输出 Token</th>
                 <th>Prompt 摘要</th>
@@ -110,6 +111,7 @@ $buildQuery = static function (array $params) use ($filters, $pageSize): string 
                     <td><?= $h($item->event_type) ?></td>
                     <td><?= $h($item->project_name) ?></td>
                     <td><?= $h($item->model_name) ?></td>
+                    <td><?= $h($item->session_id) ?></td>
                     <td><?= $h((int) $item->input_tokens) ?></td>
                     <td><?= $h((int) $item->output_tokens) ?></td>
                     <td class="prompt"><?= $h(mb_substr((string) $item->prompt, 0, 120)) ?><?= mb_strlen((string) $item->prompt) > 120 ? '...' : '' ?></td>

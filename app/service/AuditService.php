@@ -5,7 +5,6 @@ namespace CursorAudit\Service;
 use AiAuditLog;
 use AiUserDailyStat;
 use Lib\Vendor\DingtalkNotice;
-use Phalcon\Di;
 
 /**
  * 审计业务服务
@@ -27,6 +26,7 @@ class AuditService
     {
         $data = [
             'trace_id' => $this->buildTraceId($params),
+            'session_id' => $this->sanitizeStr($params['sessionId'] ?? '', 128),
             'machine_id' => $this->sanitizeStr($params['machineId'] ?? '', 100),
             'user_name' => $this->sanitizeStr($params['userName'] ?? '', 200),
             'timestamp' => $this->sanitizeStr($params['timestamp'] ?? gmdate('Y-m-d\TH:i:s\Z'), 50),
@@ -37,8 +37,6 @@ class AuditService
             'model_name' => $this->sanitizeStr($params['modelName'] ?? '', 200),
             'input_tokens' => (int) ($params['inputTokens'] ?? 0),
             'output_tokens' => (int) ($params['outputTokens'] ?? 0),
-            'session_id' => ($params['sessionId'] ?? ''),
-            'cursor_trace_id' => ($params['cursorTraceId'] ?? ''),
         ];
 
         $log = AiAuditLog::createPrompt($data);
@@ -156,10 +154,11 @@ class AuditService
     /**
      * 将每日统计结果发送到钉钉群
      *
-     * @param array $stats_result 统计结果
+     * @param array  $stats_result      统计结果
+     * @param string $detail_base_url   管理端用户日明细入口基址（可选，会写入正文）
      * @return array
      */
-    public function sendDailyUserStatsToDingTalk(array $stats_result): array
+    public function sendDailyUserStatsToDingTalk(array $stats_result, string $detail_base_url = ''): array
     {
         if (($stats_result['status'] ?? '') !== 'success') {
             return [
@@ -168,27 +167,10 @@ class AuditService
             ];
         }
 
-        $config = Di::getDefault()->getShared('config');
-        $robot_token = trim((string) ($config->dingtalk->robotToken ?? ''));
-        $keyword = trim((string) ($config->dingtalk->keyword ?? 'AI统计'));
-        $webhook = trim((string) ($config->dingtalk->webhook ?? 'https://oapi.dingtalk.com/robot/send'));
-
-        if ($robot_token === '') {
-            return [
-                'status' => 'error',
-                'msg' => '钉钉机器人 token 未配置',
-            ];
-        }
-
-        $message = $this->buildDailyStatsDingTalkMessage($stats_result, $keyword);
-        if ($webhook !== 'https://oapi.dingtalk.com/robot/send') {
-            return [
-                'status' => 'error',
-                'msg' => '当前仅支持默认钉钉机器人 webhook',
-            ];
-        }
-
-        $response = DingtalkNotice::sendRebotUtil($message, $robot_token);
+        $keyword = DingtalkNotice::AI_STAT_KEYWORD;
+        $title = $keyword . ' 每日用户统计';
+        $message = $this->buildDailyStatsDingTalkMessage($stats_result, $keyword, $detail_base_url);
+        $response = DingtalkNotice::sendAiStatMarkdownNotice($title, $message);
         if ($response === false || $response === '') {
             return [
                 'status' => 'error',
@@ -248,35 +230,75 @@ class AuditService
     }
 
     /**
-     * 构建钉钉通知内容
+     * 构建钉钉 markdown 通知内容
      *
-     * @param array  $stats_result 统计结果
-     * @param string $keyword 关键词
+     * @param array  $stats_result      统计结果
+     * @param string $keyword           关键词
+     * @param string $detail_base_url   明细入口基址（非空则追加一行）
      * @return string
      */
-    private function buildDailyStatsDingTalkMessage(array $stats_result, string $keyword): string
-    {
+    private function buildDailyStatsDingTalkMessage(
+        array $stats_result,
+        string $keyword,
+        string $detail_base_url = ''
+    ): string {
         $data = $stats_result['data'] ?? [];
         $rows = is_array($data['rows'] ?? null) ? $data['rows'] : [];
+        $stat_date = (string) ($data['stat_date'] ?? '');
+        $start_time = (string) ($data['start_time'] ?? '');
+        $end_time = (string) ($data['end_time'] ?? '');
 
         $lines = [
-            $keyword . ' 每日用户统计',
-            '统计日期：' . ($data['stat_date'] ?? ''),
-            '统计区间：' . ($data['start_time'] ?? '') . ' ~ ' . ($data['end_time'] ?? ''),
-            '用户数：' . (int) ($data['row_count'] ?? count($rows)),
+            '# ' . $keyword . ' 每日用户统计',
+            sprintf(
+                '统计日期：%s 统计区间：%s ~ %s 用户数：%d',
+                $stat_date,
+                $start_time,
+                $end_time,
+                (int) ($data['row_count'] ?? count($rows))
+            ),
         ];
 
         foreach ($rows as $row) {
+            $user_name = (string) ($row['user_name'] ?? 'unknown');
             $lines[] = sprintf(
-                '%s：%d次，输入%d，输出%d，总计%d',
-                (string) ($row['user_name'] ?? 'unknown'),
+                '- %s：%d次，输入%d，输出%d，总计%d',
+                $user_name,
                 (int) ($row['request_count'] ?? 0),
                 (int) ($row['input_tokens'] ?? 0),
                 (int) ($row['output_tokens'] ?? 0),
                 (int) ($row['total_tokens'] ?? 0)
             );
+
+            $detail_url = $this->buildUserDayDetailUrl($detail_base_url, $stat_date, $user_name);
+            if ($detail_url !== '') {
+                $lines[] = '> **[点击查看该用户当日详情](' . $detail_url . ')**';
+            }
         }
 
-        return implode("\n", $lines);
+        return implode("\n\n", $lines);
+    }
+
+    /**
+     * 构建用户日详情链接
+     *
+     * @param string $detail_base_url 详情页基址
+     * @param string $stat_date       统计日期
+     * @param string $user_name       用户名
+     * @return string
+     */
+    private function buildUserDayDetailUrl(string $detail_base_url, string $stat_date, string $user_name): string
+    {
+        $detail_base_url = trim($detail_base_url);
+        if ($detail_base_url === '' || $stat_date === '' || $user_name === '') {
+            return '';
+        }
+
+        $query = http_build_query([
+            'stat_date' => $stat_date,
+            'user_name' => $user_name,
+        ]);
+
+        return $detail_base_url . (strpos($detail_base_url, '?') === false ? '?' : '&') . $query;
     }
 }

@@ -12,6 +12,7 @@ class AiAuditLog extends Model
 {
     public $id;
     public $trace_id;
+    public $session_id;
     public $machine_id;
     public $user_name;
     public $timestamp;
@@ -55,6 +56,7 @@ class AiAuditLog extends Model
         $now = date('Y-m-d H:i:s');
         $log = new self();
         $log->trace_id = $data['trace_id'];
+        $log->session_id = $data['session_id'];
         $log->machine_id = $data['machine_id'];
         $log->user_name = $data['user_name'];
         $log->timestamp = $data['timestamp'];
