@@ -27,6 +27,7 @@ class AuditService
         $data = [
             'trace_id' => $this->buildTraceId($params),
             'session_id' => $this->sanitizeStr($params['sessionId'] ?? '', 128),
+            'cursor_trace_id' => $this->sanitizeStr($params['cursorTraceId'] ?? '', 128),
             'machine_id' => $this->sanitizeStr($params['machineId'] ?? '', 100),
             'user_name' => $this->sanitizeStr($params['userName'] ?? '', 200),
             'timestamp' => $this->sanitizeStr($params['timestamp'] ?? gmdate('Y-m-d\TH:i:s\Z'), 50),
@@ -69,10 +70,23 @@ class AuditService
     {
         $audit_id = (int) ($params['auditId'] ?? 0);
         if ($audit_id <= 0) {
-            return [
-                'status' => 'error',
-                'msg' => 'auditId 非法',
-            ];
+            $cursor_trace_id = $this->sanitizeStr((string) ($params['cursorTraceId'] ?? ''), 128);
+            if ($cursor_trace_id === '') {
+                return [
+                    'status' => 'error',
+                    'msg' => 'auditId 与 cursorTraceId 至少填写一项',
+                ];
+            }
+
+            $found = AiAuditLog::findLatestByCursorTraceId($cursor_trace_id);
+            if (empty($found)) {
+                return [
+                    'status' => 'error',
+                    'msg' => '未找到 cursorTraceId 对应记录',
+                ];
+            }
+
+            $audit_id = (int) $found->id;
         }
 
         $response_at = $this->sanitizeStr($params['responseAt'] ?? date('Y-m-d H:i:s'), 50);

@@ -13,6 +13,7 @@ class AiAuditLog extends Model
     public $id;
     public $trace_id;
     public $session_id;
+    public $cursor_trace_id;
     public $machine_id;
     public $user_name;
     public $timestamp;
@@ -57,6 +58,7 @@ class AiAuditLog extends Model
         $log = new self();
         $log->trace_id = $data['trace_id'];
         $log->session_id = $data['session_id'];
+        $log->cursor_trace_id = (string) ($data['cursor_trace_id'] ?? '');
         $log->machine_id = $data['machine_id'];
         $log->user_name = $data['user_name'];
         $log->timestamp = $data['timestamp'];
@@ -117,6 +119,27 @@ class AiAuditLog extends Model
         }
 
         return false;
+    }
+
+    /**
+     * 按 cursor_trace_id 取最新一条记录（用于无 auditId 时回填 response）
+     *
+     * @param string $cursor_trace_id Cursor 链路 ID
+     * @return AiAuditLog|false
+     */
+    public static function findLatestByCursorTraceId(string $cursor_trace_id)
+    {
+        if ($cursor_trace_id === '') {
+            return false;
+        }
+
+        return self::findFirst([
+            'conditions' => 'cursor_trace_id = :cid:',
+            'bind' => [
+                'cid' => $cursor_trace_id,
+            ],
+            'order' => 'id DESC',
+        ]);
     }
 
     /**

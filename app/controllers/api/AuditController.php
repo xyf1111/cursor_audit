@@ -71,10 +71,12 @@ class AuditController extends ControllerBase
         }
 
         $params = $this->getPostBody();
-        if (empty($params['auditId'])) {
+        $audit_id = (int) ($params['auditId'] ?? 0);
+        $cursor_trace_id = trim((string) ($params['cursorTraceId'] ?? ''));
+        if ($audit_id <= 0 && $cursor_trace_id === '') {
             $this->echoJson([
                 'status' => 'error',
-                'msg' => 'auditId 为必填项',
+                'msg' => 'auditId 与 cursorTraceId 至少填写一项',
             ]);
         }
 
