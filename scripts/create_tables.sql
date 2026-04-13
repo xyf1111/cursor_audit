@@ -7,6 +7,8 @@ USE `cursor_audit`;
 CREATE TABLE IF NOT EXISTS `ai_audit_log` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
     `trace_id` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '链路追踪 ID',
+    `session_id` VARCHAR(128) NOT NULL DEFAULT '' COMMENT '会话 ID',
+    `cursor_trace_id` VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'Cursor 链路 ID',
     `machine_id` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '机器 ID',
     `user_name` VARCHAR(200) NOT NULL DEFAULT '' COMMENT '用户名',
     `timestamp` VARCHAR(50) NOT NULL DEFAULT '' COMMENT '事件时间戳',
@@ -26,6 +28,8 @@ CREATE TABLE IF NOT EXISTS `ai_audit_log` (
     `updated_at` DATETIME NOT NULL COMMENT '更新时间',
     PRIMARY KEY (`id`),
     KEY `idx_trace_id` (`trace_id`),
+    KEY `idx_session_id` (`session_id`),
+    KEY `idx_cursor_trace_id` (`cursor_trace_id`),
     KEY `idx_machine_id` (`machine_id`),
     KEY `idx_user_name` (`user_name`),
     KEY `idx_event_type` (`event_type`),

@@ -169,10 +169,10 @@ class AuditService
      * 将每日统计结果发送到钉钉群
      *
      * @param array  $stats_result      统计结果
-     * @param string $detail_base_url   管理端用户日明细入口基址（可选，会写入正文）
+     * @param string $audit_list_base_url 管理端审计列表基址（可选，会写入正文）
      * @return array
      */
-    public function sendDailyUserStatsToDingTalk(array $stats_result, string $detail_base_url = ''): array
+    public function sendDailyUserStatsToDingTalk(array $stats_result, string $audit_list_base_url = ''): array
     {
         if (($stats_result['status'] ?? '') !== 'success') {
             return [
@@ -183,7 +183,7 @@ class AuditService
 
         $keyword = DingtalkNotice::AI_STAT_KEYWORD;
         $title = $keyword . ' 每日用户统计';
-        $message = $this->buildDailyStatsDingTalkMessage($stats_result, $keyword, $detail_base_url);
+        $message = $this->buildDailyStatsDingTalkMessage($stats_result, $keyword, $audit_list_base_url);
         $response = DingtalkNotice::sendAiStatMarkdownNotice($title, $message);
         if ($response === false || $response === '') {
             return [
@@ -248,13 +248,13 @@ class AuditService
      *
      * @param array  $stats_result      统计结果
      * @param string $keyword           关键词
-     * @param string $detail_base_url   明细入口基址（非空则追加一行）
+     * @param string $audit_list_base_url 审计列表基址（非空则追加一行）
      * @return string
      */
     private function buildDailyStatsDingTalkMessage(
         array $stats_result,
         string $keyword,
-        string $detail_base_url = ''
+        string $audit_list_base_url = ''
     ): string {
         $data = $stats_result['data'] ?? [];
         $rows = is_array($data['rows'] ?? null) ? $data['rows'] : [];
@@ -284,9 +284,9 @@ class AuditService
                 (int) ($row['total_tokens'] ?? 0)
             );
 
-            $detail_url = $this->buildUserDayDetailUrl($detail_base_url, $stat_date, $user_name);
-            if ($detail_url !== '') {
-                $lines[] = '> **[点击查看该用户当日详情](' . $detail_url . ')**';
+            $list_url = $this->buildUserAuditListUrl($audit_list_base_url, $stat_date, $user_name);
+            if ($list_url !== '') {
+                $lines[] = sprintf('> **[点击查看该用户当日审计列表](%s)**', $list_url);
             }
         }
 
@@ -294,25 +294,30 @@ class AuditService
     }
 
     /**
-     * 构建用户日详情链接
+     * 构建带筛选条件的审计列表链接（user_name、start_date、end_date）
      *
-     * @param string $detail_base_url 详情页基址
-     * @param string $stat_date       统计日期
-     * @param string $user_name       用户名
+     * @param string $audit_list_base_url 列表页基址
+     * @param string $stat_date           统计日期（Y-m-d，作为起止日期）
+     * @param string $user_name           用户名
      * @return string
+     * @author chenjinhuang<chenjinhuang@zhibo8.com>
+     * @date 2026-04-13
      */
-    private function buildUserDayDetailUrl(string $detail_base_url, string $stat_date, string $user_name): string
+    private function buildUserAuditListUrl(string $audit_list_base_url, string $stat_date, string $user_name): string
     {
-        $detail_base_url = trim($detail_base_url);
-        if ($detail_base_url === '' || $stat_date === '' || $user_name === '') {
+        $audit_list_base_url = trim($audit_list_base_url);
+        if ($audit_list_base_url === '' || $stat_date === '' || $user_name === '') {
             return '';
         }
 
         $query = http_build_query([
-            'stat_date' => $stat_date,
             'user_name' => $user_name,
+            'start_date' => $stat_date,
+            'end_date' => $stat_date,
         ]);
 
-        return $detail_base_url . (strpos($detail_base_url, '?') === false ? '?' : '&') . $query;
+        $sep = strpos($audit_list_base_url, '?') === false ? '?' : '&';
+
+        return "{$audit_list_base_url}{$sep}{$query}";
     }
 }

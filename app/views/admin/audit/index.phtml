@@ -35,7 +35,18 @@ $buildQuery = static function (array $params) use ($filters, $pageSize): string 
         table { width: 100%; border-collapse: collapse; background: #fff; }
         th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; vertical-align: top; font-size: 14px; }
         th { background: #f3f4f6; }
-        .prompt { max-width: 420px; white-space: pre-wrap; word-break: break-word; }
+        .cell-scroll {
+            width: 280px;
+            max-width: 280px;
+            height: 140px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 13px;
+            line-height: 1.45;
+            margin: 0;
+            box-sizing: border-box;
+        }
         .pager { display: flex; gap: 10px; align-items: center; margin-top: 16px; }
         .muted { color: #6b7280; }
     </style>
@@ -87,20 +98,20 @@ $buildQuery = static function (array $params) use ($filters, $pageSize): string 
                 <th>ID</th>
                 <th>请求时间</th>
                 <th>用户名</th>
-                <th>事件类型</th>
                 <th>项目名</th>
                 <th>模型</th>
                 <th>会话ID</th>
                 <th>输入 Token</th>
                 <th>输出 Token</th>
-                <th>Prompt 摘要</th>
+                <th>Prompt</th>
+                <th>Response</th>
                 <th>操作</th>
             </tr>
         </thead>
         <tbody>
         <?php if (empty($list)): ?>
             <tr>
-                <td colspan="10" class="muted">暂无数据</td>
+                <td colspan="11" class="muted">暂无数据</td>
             </tr>
         <?php else: ?>
             <?php foreach ($list as $item): ?>
@@ -108,13 +119,13 @@ $buildQuery = static function (array $params) use ($filters, $pageSize): string 
                     <td><?= $h($item->id) ?></td>
                     <td><?= $h($item->created_at) ?></td>
                     <td><?= $h($item->user_name ?: 'unknown') ?></td>
-                    <td><?= $h($item->event_type) ?></td>
                     <td><?= $h($item->project_name) ?></td>
                     <td><?= $h($item->model_name) ?></td>
                     <td><?= $h($item->session_id) ?></td>
                     <td><?= $h((int) $item->input_tokens) ?></td>
                     <td><?= $h((int) $item->output_tokens) ?></td>
-                    <td class="prompt"><?= $h(mb_substr((string) $item->prompt, 0, 120)) ?><?= mb_strlen((string) $item->prompt) > 120 ? '...' : '' ?></td>
+                    <td><pre class="cell-scroll"><?= $h((string) $item->prompt) ?></pre></td>
+                    <td><pre class="cell-scroll"><?= $h((string) $item->response) ?></pre></td>
                     <td><a href="/admin/audit/detail?id=<?= $h($item->id) ?>">查看详情</a></td>
                 </tr>
             <?php endforeach; ?>
