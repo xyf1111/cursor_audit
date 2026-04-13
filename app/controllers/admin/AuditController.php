@@ -21,7 +21,6 @@ class AuditController extends ControllerBase
 
         $filters = [
             'user_name' => trim((string) $this->request->getQuery('user_name', null, '')),
-            'event_type' => trim((string) $this->request->getQuery('event_type', null, '')),
             'project_name' => trim((string) $this->request->getQuery('project_name', null, '')),
             'model_name' => trim((string) $this->request->getQuery('model_name', null, '')),
             'start_date' => trim((string) $this->request->getQuery('start_date', null, '')),

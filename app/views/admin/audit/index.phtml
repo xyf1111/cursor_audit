@@ -47,6 +47,13 @@ $buildQuery = static function (array $params) use ($filters, $pageSize): string 
             margin: 0;
             box-sizing: border-box;
         }
+        .col-session-id {
+            max-width: 120px;
+            width: 120px;
+            word-break: break-all;
+            font-size: 12px;
+            line-height: 1.35;
+        }
         .pager { display: flex; gap: 10px; align-items: center; margin-top: 16px; }
         .muted { color: #6b7280; }
     </style>
@@ -58,10 +65,6 @@ $buildQuery = static function (array $params) use ($filters, $pageSize): string 
         <label>
             用户名
             <input type="text" name="user_name" value="<?= $h($filters['user_name'] ?? '') ?>">
-        </label>
-        <label>
-            事件类型
-            <input type="text" name="event_type" value="<?= $h($filters['event_type'] ?? '') ?>">
         </label>
         <label>
             项目名
@@ -100,7 +103,7 @@ $buildQuery = static function (array $params) use ($filters, $pageSize): string 
                 <th>用户名</th>
                 <th>项目名</th>
                 <th>模型</th>
-                <th>会话ID</th>
+                <th class="col-session-id">会话ID</th>
                 <th>输入 Token</th>
                 <th>输出 Token</th>
                 <th>Prompt</th>
@@ -121,7 +124,7 @@ $buildQuery = static function (array $params) use ($filters, $pageSize): string 
                     <td><?= $h($item->user_name ?: 'unknown') ?></td>
                     <td><?= $h($item->project_name) ?></td>
                     <td><?= $h($item->model_name) ?></td>
-                    <td><?= $h($item->session_id) ?></td>
+                    <td class="col-session-id"><?= $h($item->session_id) ?></td>
                     <td><?= $h((int) $item->input_tokens) ?></td>
                     <td><?= $h((int) $item->output_tokens) ?></td>
                     <td><pre class="cell-scroll"><?= $h((string) $item->prompt) ?></pre></td>
